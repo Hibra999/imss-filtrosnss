@@ -109,44 +109,9 @@ def main():
     resumen_final = solicitudes_por_unidad.merge(resumen_duplicadas_umf, on='NOMSOLI', how='left').fillna(0)
     resumen_final['Total_Citas_Duplicadas'] = resumen_final['Total_Citas_Duplicadas'].astype(int)
     
-    # --- GRAFICO 4: Proporción de Citas Normales vs Duplicadas (Pie chart) ---
-    total_citas_umf = len(df_umf)
-    total_citas_duplicadas = int(resumen_final['Total_Citas_Duplicadas'].sum())
-    total_citas_unicas = total_citas_umf - total_citas_duplicadas
-
-    prop_df = pd.DataFrame({
-        'Tipo de Cita': ['Únicas (1 sola vez)', 'Extras (Múltiples)'],
-        'Cantidad': [total_citas_unicas, total_citas_duplicadas]
-    })
-    fig_proporcion = px.pie(
-        prop_df, names='Tipo de Cita', values='Cantidad',
-        title="4. Proporción de Citas Únicas vs Extras Creadas",
-        color='Tipo de Cita',
-        color_discrete_map={'Únicas (1 sola vez)':'#134e39', 'Extras (Múltiples)':'#8a9597'},
-        hole=0.4
-    ).update_layout(plot_bgcolor="white", paper_bgcolor="white")
-
-    # --- GRAFICO 5: Top 10 Especialidades con más Duplicados globales ---
-    duplicados_por_especialidad = df_duplicados_detalle.groupby('nomServ').size().reset_index(name='Veces_Reportado')
-    # Nota: la tabla de detalles tiene una fila por CADA cita repetida. 
-    # Para ser exactos en "citas extra", lo acercamos contando apariciones en la tabla agrupada.
-    top10_esp_dup = df_duplicados_detalle.drop_duplicates(subset=['NOMSOLI', 'NSS_AGREGADO', 'nomServ']).merge(pacientes_duplicados[['NOMSOLI', 'NSS_AGREGADO', 'nomServ', 'Citas_Extras']], on=['NOMSOLI', 'NSS_AGREGADO', 'nomServ'], how='inner')
-    esp_dup_resumen = top10_esp_dup.groupby('nomServ')['Citas_Extras'].sum().reset_index().sort_values(by='Citas_Extras', ascending=False).head(10)
-
-    fig_top_especialidades = px.bar(
-        esp_dup_resumen, x='nomServ', y='Citas_Extras',
-        title="5. Top 10 Especialidades Nacionales con más Citas Extras (Duplicadas)",
-        labels={'nomServ': 'Especialidad', 'Citas_Extras': 'Cantidad de Citas Extras'},
-        text_auto=True
-    )
-    fig_top_especialidades.update_traces(marker_color='#10312B')
-    fig_top_especialidades.update_layout(plot_bgcolor="white", paper_bgcolor="white", xaxis_tickangle=-45, margin=dict(b=150))
-
     html_fig1 = pio.to_html(fig_totales, full_html=False, default_width='100%', default_height='600px')
     html_fig2 = pio.to_html(fig_especialidad, full_html=False, default_width='100%', default_height='800px')
     html_fig3 = pio.to_html(fig_duplicados, full_html=False, default_width='100%', default_height='600px')
-    html_fig4 = pio.to_html(fig_proporcion, full_html=False, default_width='100%', default_height='500px')
-    html_fig5 = pio.to_html(fig_top_especialidades, full_html=False, default_width='100%', default_height='600px')
 
     resumen_final = solicitudes_por_unidad.merge(resumen_duplicadas_umf, on='NOMSOLI', how='left').fillna(0)
     resumen_final['Total_Citas_Duplicadas'] = resumen_final['Total_Citas_Duplicadas'].astype(int)
@@ -229,13 +194,11 @@ def main():
             </div>
 
             <div class="row">
-                <div class="col-md-6"><div class="card p-4">{html_fig4}</div></div>
-                <div class="col-md-6"><div class="card p-4">{html_fig1}</div></div>
+                <div class="col-12"><div class="card p-4">{html_fig1}</div></div>
             </div>
             <div class="row"><div class="col-12"><div class="card p-4">{html_fig2}</div></div></div>
             <div class="row">
-                <div class="col-md-6"><div class="card p-4">{html_fig5}</div></div>
-                <div class="col-md-6"><div class="card p-4">{html_fig3}</div></div>
+                <div class="col-12"><div class="card p-4">{html_fig3}</div></div>
             </div>
 
             <div class="row">
