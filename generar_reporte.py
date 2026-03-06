@@ -85,7 +85,7 @@ def main():
             df_dup_detalle = df_hosp.merge(pacientes_dup[['NOMSOLI', 'NSS_AGREGADO', 'nomServ', 'Num_Citas_Paciente']], on=['NOMSOLI', 'NSS_AGREGADO', 'nomServ'], how='inner')
             df_dup_detalle.sort_values(by=['NOMSOLI', 'NSS_AGREGADO', 'FECHASOLICITUD'], inplace=True)
             
-            cols_mostrar = ["NOMSOLI", "NSS_AGREGADO", "NOMBRE", "nomServ", "FECHACITA", "HORACITA", "Num_Citas_Paciente"]
+            cols_mostrar = ["NOMHOSP", "NOMSOLI", "NSS_AGREGADO", "NOMBRE", "nomServ", "FECHACITA", "HORACITA", "Num_Citas_Paciente"]
             for col in cols_mostrar:
                 if col not in df_dup_detalle.columns:
                     df_dup_detalle[col] = ""
@@ -94,7 +94,7 @@ def main():
             df_mostrar_detalles = df_dup_detalle[cols_mostrar].fillna("")
         else:
             resumen_dup = pd.DataFrame(columns=['NOMSOLI', 'Pacientes_Con_Multiples_Citas', 'Total_Citas_Duplicadas'])
-            df_mostrar_detalles = pd.DataFrame(columns=["NOMSOLI", "NSS_AGREGADO", "NOMBRE", "nomServ", "FECHACITA", "HORACITA", "Num_Citas_Paciente"])
+            df_mostrar_detalles = pd.DataFrame(columns=["NOMHOSP", "NOMSOLI", "NSS_AGREGADO", "NOMBRE", "nomServ", "FECHACITA", "HORACITA", "Num_Citas_Paciente"])
 
         resumen_duplicadas_dict = resumen_dup.to_dict(orient='records')
         detalles_dict = df_mostrar_detalles.to_dict(orient='records')
@@ -297,6 +297,7 @@ def main():
                             <table id="tablaDetallesDuplicados" class="table table-striped table-hover display table-bordered text-center w-100">
                                 <thead>
                                     <tr>
+                                        <th>Hospital</th>
                                         <th>Unidad (UMF)</th>
                                         <th>NSS + AGREGADO</th>
                                         <th>Nombre del Paciente</th>
@@ -371,10 +372,10 @@ def main():
             function updateDashboard(hospital) {{
                 const data = DATA_STORE[hospital];
                 
-                // 1. Actualizar KPIs con animación
-                animateValue("kpiTotalCitas", parseInt($('#kpiTotalCitas').text()), data.kpis.total_citas, 500);
-                animateValue("kpiCitasDuplicadas", parseInt($('#kpiCitasDuplicadas').text()), data.kpis.citas_duplicadas, 500);
-                animateValue("kpiTotalUmf", parseInt($('#kpiTotalUmf').text()), data.kpis.total_umf, 500);
+                // 1. Actualizar KPIs con animación rápida
+                animateValue("kpiTotalCitas", parseInt($('#kpiTotalCitas').text()), data.kpis.total_citas, 200);
+                animateValue("kpiCitasDuplicadas", parseInt($('#kpiCitasDuplicadas').text()), data.kpis.citas_duplicadas, 200);
+                animateValue("kpiTotalUmf", parseInt($('#kpiTotalUmf').text()), data.kpis.total_umf, 200);
 
                 // 2. Gráfica 1: Solicitudes
                 const trace1 = {{
@@ -457,6 +458,7 @@ def main():
                     dtDetalles.clear();
                     data.tabla_detalles.forEach(r => {{
                         dtDetalles.row.add([
+                            r.NOMHOSP,
                             r.NOMSOLI,
                             r.NSS_AGREGADO,
                             r.NOMBRE,
