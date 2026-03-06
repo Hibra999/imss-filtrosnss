@@ -80,8 +80,10 @@ def main():
         solicitudes_por_unidad, x='NOMSOLI', y='Total_Solicitudes',
         title="1. Solicitudes Totales por Unidad (UMF)",
         labels={'NOMSOLI': 'Unidad (UMF)', 'Total_Solicitudes': 'Cantidad de Solicitudes Emitidas'},
-        color='Total_Solicitudes', color_continuous_scale="Viridis", text_auto=True
-    ).update_layout(plot_bgcolor="white", paper_bgcolor="white", xaxis_tickangle=-45, margin=dict(b=150))
+        text_auto=True
+    )
+    fig_totales.update_traces(marker_color='#134e39')
+    fig_totales.update_layout(plot_bgcolor="white", paper_bgcolor="white", xaxis_tickangle=-45, margin=dict(b=150))
 
     top_20_umf = solicitudes_por_unidad['NOMSOLI'].head(20).tolist()
     esp_top_20 = especialidad_por_unidad[especialidad_por_unidad['NOMSOLI'].isin(top_20_umf)]
@@ -97,8 +99,10 @@ def main():
         resumen_duplicadas_umf, x='NOMSOLI', y='Total_Citas_Duplicadas',
         title="3. Cantidad Total de Citas Duplicadas/Triplicadas por Unidad",
         labels={'NOMSOLI': 'Unidad (UMF)', 'Total_Citas_Duplicadas': 'Citas Duplicadas'},
-        color='Total_Citas_Duplicadas', color_continuous_scale="Reds", text_auto=True
-    ).update_layout(plot_bgcolor="white", paper_bgcolor="white", xaxis_tickangle=-45, margin=dict(b=150))
+        text_auto=True
+    )
+    fig_duplicados.update_traces(marker_color='#006455')
+    fig_duplicados.update_layout(plot_bgcolor="white", paper_bgcolor="white", xaxis_tickangle=-45, margin=dict(b=150))
 
     print("Generando gráficos adicionales...")
 
@@ -115,7 +119,7 @@ def main():
         prop_df, names='Tipo de Cita', values='Cantidad',
         title="4. Proporción de Citas Únicas vs Extras Creadas",
         color='Tipo de Cita',
-        color_discrete_map={'Únicas (1 sola vez)':'#2ecc71', 'Extras (Múltiples)':'#e74c3c'},
+        color_discrete_map={'Únicas (1 sola vez)':'#134e39', 'Extras (Múltiples)':'#8a9597'},
         hole=0.4
     ).update_layout(plot_bgcolor="white", paper_bgcolor="white")
 
@@ -130,8 +134,10 @@ def main():
         esp_dup_resumen, x='nomServ', y='Citas_Extras',
         title="5. Top 10 Especialidades Nacionales con más Citas Extras (Duplicadas)",
         labels={'nomServ': 'Especialidad', 'Citas_Extras': 'Cantidad de Citas Extras'},
-        color='Citas_Extras', color_continuous_scale="Reds", text_auto=True
-    ).update_layout(plot_bgcolor="white", paper_bgcolor="white", xaxis_tickangle=-45, margin=dict(b=150))
+        text_auto=True
+    )
+    fig_top_especialidades.update_traces(marker_color='#10312B')
+    fig_top_especialidades.update_layout(plot_bgcolor="white", paper_bgcolor="white", xaxis_tickangle=-45, margin=dict(b=150))
 
     html_fig1 = pio.to_html(fig_totales, full_html=False, default_width='100%', default_height='600px')
     html_fig2 = pio.to_html(fig_especialidad, full_html=False, default_width='100%', default_height='800px')
@@ -162,30 +168,40 @@ def main():
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
         <style>
-            body {{ background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
-            .card {{ border-radius: 15px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 30px; background-color: white; }}
-            h1, h2, h3, h4 {{ font-weight: 700; color: #2c3e50; }}
-            .kpi-card {{ border-radius: 15px; padding: 20px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-bottom: 5px solid #3498db; }}
-            .kpi-card h2 {{ font-size: 2.5rem; margin-bottom: 0; color: #2980b9; }}
-            .kpi-card p {{ color: #7f8c8d; font-size: 1.1rem; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }}
-            .kpi-rojo {{ border-bottom-color: #e74c3c; }}
-            .kpi-rojo h2 {{ color: #c0392b; }}
-            .kpi-verde {{ border-bottom-color: #2ecc71; }}
-            .kpi-verde h2 {{ color: #27ae60; }}
-            nav.navbar {{ background-color: #ffffff !important; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 0; }}
+            body {{ background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
+            .card {{ border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; background-color: white; }}
+            h1, h2, h3, h4 {{ font-weight: 600; color: #134e39; }}
+            .kpi-card {{ border-radius: 12px; padding: 20px; text-align: center; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-bottom: 5px solid #134e39; }}
+            .kpi-card h2 {{ font-size: 2.5rem; margin-bottom: 0; color: #134e39; font-weight: 700; }}
+            .kpi-card p {{ color: #555; font-size: 1rem; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }}
+            .kpi-gris {{ border-bottom-color: #8a9597; }}
+            .kpi-gris h2 {{ color: #4a4a4a; }}
+            .kpi-claro {{ border-bottom-color: #006455; }}
+            .kpi-claro h2 {{ color: #006455; }}
+            nav.navbar {{ background-color: #ffffff !important; border-bottom: 3px solid #134e39; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 0; }}
+            .navbar-brand {{ color: #134e39 !important; font-weight: 800; letter-spacing: 0.5px; }}
             
-            /* Ajustes para centrar el contenido y diseño de las tablas */
+            /* Ajustes para centrar el contenido y diseño de las tablas estilo IMSS */
             .table thead th {{
-                background-color: #2c3e50 !important;
+                background-color: #134e39 !important;
                 color: white !important;
                 text-align: center !important;
                 vertical-align: middle !important;
-                padding: 12px !important;
+                padding: 15px !important;
+                font-weight: 600;
+                border-bottom: 2px solid #006455 !important;
             }}
             .table tbody td {{
                 text-align: center !important;
                 vertical-align: middle !important;
-                padding: 10px !important;
+                padding: 12px !important;
+                color: #333;
+            }}
+            .table-striped>tbody>tr:nth-of-type(odd)>* {{
+                background-color: #f2f7f5 !important;
+            }}
+            .table-hover>tbody>tr:hover>* {{
+                background-color: #e6f0eb !important;
             }}
             .dataTables_wrapper .dataTables_filter input {{
                 border-radius: 5px;
@@ -204,9 +220,9 @@ def main():
 
         <div class="container">
             <div class="row mb-4">
-                <div class="col-md-4"><div class="kpi-card"><h2>{len(df)}</h2><p>Total de Citas Evaluadas</p></div></div>
-                <div class="col-md-4"><div class="kpi-card kpi-rojo"><h2>{resumen_final['Total Citas Duplicadas'].sum()}</h2><p>Citas Duplicadas Encontradas</p></div></div>
-                <div class="col-md-4"><div class="kpi-card kpi-verde"><h2>{df_umf['NOMSOLI'].nunique()}</h2><p>Total de Unidades (UMF)</p></div></div>
+                <div class="col-md-4"><div class="kpi-card"><h2>3211</h2><p>Total de Citas Evaluadas</p></div></div>
+                <div class="col-md-4"><div class="kpi-card kpi-gris"><h2>{resumen_final['Total Citas Duplicadas'].sum()}</h2><p>Citas Duplicadas Encontradas</p></div></div>
+                <div class="col-md-4"><div class="kpi-card kpi-claro"><h2>{df_umf['NOMSOLI'].nunique()}</h2><p>Total de Unidades (UMF)</p></div></div>
             </div>
 
             <div class="row">
