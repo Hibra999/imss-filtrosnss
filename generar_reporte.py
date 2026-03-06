@@ -107,12 +107,12 @@ def main():
     resumen_final = solicitudes_por_unidad.merge(resumen_duplicadas_umf, on='NOMSOLI', how='left').fillna(0)
     resumen_final['Total_Citas_Duplicadas'] = resumen_final['Total_Citas_Duplicadas'].astype(int)
     resumen_final.columns = ["Unidad (UMF)", "Total Solicitudes Emitidas", "Pacientes c/ Múltiples Citas", "Total Citas Duplicadas"]
-    html_tabla_resumen = resumen_final.to_html(classes="table table-striped table-hover display", index=False, table_id="tablaResumenUMF")
+    html_tabla_resumen = resumen_final.to_html(classes="table table-striped table-hover display table-bordered text-center", justify="center", index=False, table_id="tablaResumenUMF")
 
     columnas_mostrar = ["NOMSOLI", "NSS_AGREGADO", "NOMBRE", "nomServ", "FECHACITA", "HORACITA", "Num_Citas_Paciente"]
     df_mostrar_detalles = df_duplicados_detalle[columnas_mostrar]
     df_mostrar_detalles.columns = ["Unidad (UMF)", "NSS + AGREGADO", "Nombre del Paciente", "Especialidad", "Fecha Cita", "Hora Cita", "Total de Citas Creadas"]
-    html_tabla_detalles = df_mostrar_detalles.to_html(classes="table table-striped table-hover display", index=False, table_id="tablaDetallesDuplicados")
+    html_tabla_detalles = df_mostrar_detalles.to_html(classes="table table-striped table-hover display table-bordered text-center", justify="center", index=False, table_id="tablaDetallesDuplicados")
 
     print("Generando archivo HTML estático...")
     
@@ -138,6 +138,26 @@ def main():
             .kpi-verde {{ border-bottom-color: #2ecc71; }}
             .kpi-verde h2 {{ color: #27ae60; }}
             nav.navbar {{ background-color: #ffffff !important; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 15px 0; }}
+            
+            /* Ajustes para centrar el contenido y diseño de las tablas */
+            .table thead th {{
+                background-color: #2c3e50 !important;
+                color: white !important;
+                text-align: center !important;
+                vertical-align: middle !important;
+                padding: 12px !important;
+            }}
+            .table tbody td {{
+                text-align: center !important;
+                vertical-align: middle !important;
+                padding: 10px !important;
+            }}
+            .dataTables_wrapper .dataTables_filter input {{
+                border-radius: 5px;
+                border: 1px solid #bdc3c7;
+                padding: 5px 10px;
+                margin-left: 10px;
+            }}
         </style>
     </head>
     <body>
