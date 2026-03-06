@@ -289,10 +289,11 @@ def main():
     </html>
     """
 
-    with open("Reporte_Dashboard_Citas.html", "w", encoding="utf-8") as f:
+    os.makedirs("docs", exist_ok=True)
+    with open("docs/index.html", "w", encoding="utf-8") as f:
         f.write(html_template)
     
-    print("\n¡Éxito! El reporte se ha guardado como 'Reporte_Dashboard_Citas.html'")
+    print("\n¡Éxito! El reporte se ha guardado como 'docs/index.html'")
 
 if __name__ == "__main__":
     main()
