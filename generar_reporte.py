@@ -106,6 +106,9 @@ def main():
 
     print("Generando gráficos adicionales...")
 
+    resumen_final = solicitudes_por_unidad.merge(resumen_duplicadas_umf, on='NOMSOLI', how='left').fillna(0)
+    resumen_final['Total_Citas_Duplicadas'] = resumen_final['Total_Citas_Duplicadas'].astype(int)
+    
     # --- GRAFICO 4: Proporción de Citas Normales vs Duplicadas (Pie chart) ---
     total_citas_umf = len(df_umf)
     total_citas_duplicadas = int(resumen_final['Total_Citas_Duplicadas'].sum())
