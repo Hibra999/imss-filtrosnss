@@ -60,28 +60,19 @@ def main():
 
     # ---------------------------------------------------------
     # 3. VER CUANTAS CITAS DUPLICADAS O TRIPLICADAS POR UNIDAD
-    #    Usando pandas.duplicated() nativo (sin considerar nombre del paciente)
+    #    (Basado en NSS_AGREGADO y también nomServ - Especialidad)
     # ---------------------------------------------------------
-    cols_duplicados = ['NOMSOLI', 'NSS_AGREGADO', 'nomServ', 'FECHACITA', 'HORACITA']
-
-    # Marcar TODOS los registros duplicados (keep=False marca todas las ocurrencias)
-    df_umf['ES_DUPLICADO'] = df_umf.duplicated(subset=cols_duplicados, keep=False)
-
-    # Filtrar solo los duplicados
-    df_duplicados_detalle = df_umf[df_umf['ES_DUPLICADO']].copy()
-
-    # Contar cuántas veces aparece cada combinación para saber si es duplicada, triplicada, etc.
-    df_duplicados_detalle['Num_Citas_Paciente'] = df_duplicados_detalle.groupby(cols_duplicados)['NSS_AGREGADO'].transform('count')
-    df_duplicados_detalle.sort_values(by=['NOMSOLI', 'NSS_AGREGADO', 'FECHASOLICITUD'], inplace=True)
-
-    # Resumen: para cada combinación única, las citas extras = total - 1
-    citas_por_paciente = df_duplicados_detalle.drop_duplicates(subset=cols_duplicados)[['NOMSOLI', 'NSS_AGREGADO', 'nomServ', 'Num_Citas_Paciente']].copy()
-    citas_por_paciente['Citas_Extras'] = citas_por_paciente['Num_Citas_Paciente'] - 1
-
-    resumen_duplicadas_umf = citas_por_paciente.groupby('NOMSOLI').agg(
+    citas_por_paciente = df_umf.groupby(['NOMSOLI', 'NSS_AGREGADO', 'nomServ']).size().reset_index(name='Num_Citas_Paciente')
+    pacientes_duplicados = citas_por_paciente[citas_por_paciente['Num_Citas_Paciente'] > 1].copy()
+    pacientes_duplicados['Citas_Extras'] = pacientes_duplicados['Num_Citas_Paciente'] - 1
+    
+    resumen_duplicadas_umf = pacientes_duplicados.groupby('NOMSOLI').agg(
         Pacientes_Con_Multiples_Citas=('NSS_AGREGADO', 'count'),
         Total_Citas_Duplicadas=('Citas_Extras', 'sum')
     ).reset_index().sort_values(by='Total_Citas_Duplicadas', ascending=False)
+
+    df_duplicados_detalle = df_umf.merge(pacientes_duplicados[['NOMSOLI', 'NSS_AGREGADO', 'nomServ', 'Num_Citas_Paciente']], on=['NOMSOLI', 'NSS_AGREGADO', 'nomServ'], how='inner')
+    df_duplicados_detalle.sort_values(by=['NOMSOLI', 'NSS_AGREGADO', 'FECHASOLICITUD'], inplace=True)
 
     print("Generando gráficos...")
 
