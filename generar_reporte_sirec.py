@@ -3,63 +3,52 @@ import json
 import os
 
 def main():
-    print("Leyendo el archivo de Excel...")
+    print("Leyendo el archivo de Excel SIREC...")
     try:
-        df = pd.read_excel("DF72F2A6-export.xlsx", sheet_name="ListadoCitasComprometidas")
+        df = pd.read_excel("INDOCE 10 03 26  SIREC.xlsx", sheet_name="INDOCE")
     except Exception as e:
         print(f"Error al leer el archivo: {e}")
         return
 
-    # Limpieza inicial de nombres de columnas
-    df.columns = [
-        "CVE_DEL", "SOLICITO", "NOMSOLI", "FECHASOLICITUD", "HOSPITAL", "NOMHOSP", "SERVICIO", 
-        "nomServ", "FECHACITA", "CONSULTORIO", "TURNO", "HORACITA", "NSS", "AGREGADO", 
-        "NOMBRE", "PATERNO", "MATERNO", "DiasHabilRefer_Cita", "TEL", "CEL", "MAIL"
-    ]
-    df.dropna(subset=['NOMSOLI', 'NOMHOSP'], inplace=True)
-    df = df.iloc[1:].copy() # Eliminar la fila extra de encabezado si aplica
-
     print("Procesando datos...")
     
-    # Concatenar NSS y AGREGADO en una sola columna
+    # Concatenar NSS y AGREGADO en una sola columna usando las nuevas columnas
     df['NSS_Limpio'] = df['NSS'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
-    df['AGREGADO_Limpio'] = df['AGREGADO'].astype(str).str.strip()
+    df['AGREGADO_Limpio'] = df['Agregado'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
     df['NSS_AGREGADO'] = df['NSS_Limpio'] + "_" + df['AGREGADO_Limpio']
     
-    # Asegurar que fechas y horas sean strings para evitar errores de serialización JSON
-    for col in ['FECHASOLICITUD', 'FECHACITA', 'HORACITA']:
+    # Asegurar que fechas sean strings
+    for col in ['Fecha Solicitud', 'Fecha Cita']:
         if col in df.columns:
             df[col] = df[col].astype(str)
 
-    # Unidades especificadas en el contexto
-    unidades_umf = [
-        'UMF 78 NETZAHUALCOYOTL', 'UMF 75 NETZAHUALCOYOTL', 'UMF 62 CUAUTITLAN', 
-        'UMF 64 TEQUESQUINAHUAC', 'UMF 198 COACALCO', 'UMF 79 V.CEYLAN', 'HGOMF 60 TLANEPANTLA', 
-        'UMF 92 CD.AZTECA', 'UMF 95 PANTACO', 'UMF 195 CHALCO', 'UMAA 199 TLANEPANTLA',
-        'UMF 91 VILLA FLORES', 'UMF 191 ECATEPEC', 'HGZMF 76 XALOSTOC', 'UMF 186 IZTACALA', 
-        'UMF 56 JILOTEPEC', 'UMF 185 L CARTAGENA', 'UMF 52 CUAUTITLAN I.', 'UMF 55 ZUMPANGO', 
-        'HGZ 57 LA QUEBRADA', 'UMF 181 CHALCO II', 'UMF 68 TULPETLAC', 'HGZ 98 COACALCO',
-        'HGR 72 GUSTAVO BAZ', 'UMF 59 LECHERIA', 'UMF 184 INFONAVIT SUR', 'UMF 93 CERRO GORDO', 
-        'UMF 77 SAN AGUSTIN', 'HGR 196 FIDEL VELAZQUEZ', 'UMAA 198 SAN RAFAEL', 'UMF 67 STA.CLARA', 
-        'UMF 69 TEXCOCO', 'UMF 188 TEPALCATES', 'HGZ 68 TULPETLAC', 'UMF 54 APAZCO', 'UMF 70 AYOTLA',
-        'UMF 84 CHIMALHUACAN', 'UMF 86 IXTAPALUCA', 'UMF 180 CHALCO I', 'UMF 87 OZUMBA', 
-        'UMF 193 CHALCO', 'UMF 74 SAN RAFAEL', 'UMF 73 AMECAMECA', 'UMF 81 JUCHITEPEC', 
-        'UMAA 180 CHALCO I ', 'UMF 182 EL SOL', 'UMF 96 TEPOZA', 'UMF 83 CHICOLOAPAN',
-        'HGZ 53 LOS REYES PAZ', 'HGZ 197 TEXCOCO', 'UMF 189 CHIMALHUACAN', 'UMF 82 ATENCO', 
-        'UMF 183 REY NETZA', 'HGR 200 TECAMAC', 'UMF 89 OTUMBA'
-    ]
+    # Mapear columnas al formato de los diccionarios anteriores
+    if 'Clave Unidad' in df.columns:
+        df['NOMSOLI'] = df['Clave Unidad'].astype(str)
+    else:
+        df['NOMSOLI'] = 'Unidad Desconocida'
+        
+    df['NOMHOSP'] = "Reporte SIREC"
+    df['nomServ'] = df['Especialidad'] if 'Especialidad' in df.columns else 'Sin Especialidad'
+    df['FECHASOLICITUD'] = df['Fecha Solicitud'] if 'Fecha Solicitud' in df.columns else ''
+    df['FECHACITA'] = df['Fecha Cita'] if 'Fecha Cita' in df.columns else ''
+    df['HORACITA'] = df['Consultorio'].astype(str) if 'Consultorio' in df.columns else ''
+    df['NOMBRE'] = df['Nombre'] if 'Nombre' in df.columns else ''
 
-    df_umf = df[df['NOMSOLI'].isin(unidades_umf)].copy()
+    # Filtrar solo si hay NOMSOLI
+    df.dropna(subset=['NOMSOLI'], inplace=True)
 
-    # Obtener la lista única de Hospitales
-    hospitales_unicos = df_umf['NOMHOSP'].dropna().unique().tolist()
-    hospitales_unicos = sorted([str(h) for h in hospitales_unicos])
+    unidades_unicas = df['NOMSOLI'].dropna().unique().tolist()
+    unidades_unicas = sorted([str(u) for u in unidades_unicas])
+    unidades_unicas.insert(0, "TODAS LAS UNIDADES")
 
-    print("Calculando agregaciones por hospital...")
     data_store = {}
 
-    for hosp in hospitales_unicos:
-        df_hosp = df_umf[df_umf['NOMHOSP'] == hosp].copy()
+    for unidad in unidades_unicas:
+        if unidad == "TODAS LAS UNIDADES":
+            df_hosp = df.copy()
+        else:
+            df_hosp = df[df['NOMSOLI'] == unidad].copy()
         
         # 1. Solicitudes por UMF
         sol_umf = df_hosp.groupby('NOMSOLI').size().reset_index(name='Total_Solicitudes').sort_values(by='Total_Solicitudes', ascending=False)
@@ -71,7 +60,7 @@ def main():
         esp_top_20 = esp_umf[esp_umf['NOMSOLI'].isin(top_20)]
         esp_dict = esp_top_20.to_dict(orient='records')
         
-        # 3. Duplicados (Agrupando NSS_AGREGADO y nomServ, como en el original)
+        # 3. Duplicados
         citas_paciente = df_hosp.groupby(['NOMSOLI', 'NSS_AGREGADO', 'nomServ']).size().reset_index(name='Num_Citas_Paciente')
         pacientes_dup = citas_paciente[citas_paciente['Num_Citas_Paciente'] > 1].copy()
         pacientes_dup['Citas_Extras'] = pacientes_dup['Num_Citas_Paciente'] - 1
@@ -90,7 +79,6 @@ def main():
                 if col not in df_dup_detalle.columns:
                     df_dup_detalle[col] = ""
 
-            # Manejar nulos en el json
             df_mostrar_detalles = df_dup_detalle[cols_mostrar].fillna("")
         else:
             resumen_dup = pd.DataFrame(columns=['NOMSOLI', 'Pacientes_Con_Multiples_Citas', 'Total_Citas_Duplicadas'])
@@ -107,7 +95,7 @@ def main():
         
         total_citas_duplicadas = int(resumen_final['Total_Citas_Duplicadas'].sum()) if not resumen_final.empty else 0
 
-        data_store[hosp] = {
+        data_store[unidad] = {
             "kpis": {
                 "total_citas": len(df_hosp),
                 "citas_duplicadas": total_citas_duplicadas,
@@ -120,15 +108,11 @@ def main():
             "tabla_detalles": detalles_dict
         }
 
-    # Seleccionar 'UMAA 198 SAN RAFAEL' por defecto si existe, o el primero
-    default_hosp = 'UMAA 198 SAN RAFAEL'
-    if default_hosp not in hospitales_unicos and len(hospitales_unicos) > 0:
-        default_hosp = hospitales_unicos[0]
-
+    default_hosp = 'TODAS LAS UNIDADES'
     json_data = json.dumps(data_store, ensure_ascii=False)
-    hospitales_json = json.dumps(hospitales_unicos, ensure_ascii=False)
+    hospitales_json = json.dumps(unidades_unicas, ensure_ascii=False)
 
-    print("Generando archivo HTML estático interactivo...")
+    print("Generando archivo HTML estático interactivo para SIREC...")
     
     html_template = f"""
     <!DOCTYPE html>
@@ -136,7 +120,7 @@ def main():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Dashboard Citas UMF y Duplicados</title>
+        <title>Dashboard SIREC</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
@@ -220,11 +204,7 @@ def main():
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
             <div class="container d-flex justify-content-between align-items-center">
-                <a class="navbar-brand fw-bold" style="color: #2c3e50; font-size: 1.5rem;" href="#">Análisis Estratégico de Citas por Unidad (UMF)</a>
-                <div>
-                    <a href="index.html" class="btn btn-success" style="background-color:#134e39; border-color:#134e39;">Citas Comprometidas</a>
-                    <a href="sirec.html" class="btn btn-outline-success me-2" style="border-color:#134e39; color:#134e39;">Análisis SIREC</a>
-                </div>
+                <a class="navbar-brand fw-bold" style="color: #2c3e50; font-size: 1.5rem;" href="#">Reporte Análisis SIREC</a>
             </div>
         </nav>
 
@@ -233,7 +213,7 @@ def main():
             <div class="row">
                 <div class="col-12">
                     <div class="hospital-select-container d-flex align-items-center justify-content-between flex-wrap">
-                        <h4 class="mb-2 mb-md-0">Seleccione un Hospital:</h4>
+                        <h4 class="mb-2 mb-md-0">Unidad (UMF):</h4>
                         <select id="hospitalSelect" class="form-select form-select-lg w-auto" style="min-width: 300px;">
                             <!-- Opciones inyectadas por JS -->
                         </select>
@@ -243,8 +223,8 @@ def main():
 
             <!-- KPIs -->
             <div class="row mb-4">
-                <div class="col-md-4"><div class="kpi-card"><h2 id="kpiTotalCitas">0</h2><p>Total de Citas Evaluadas</p></div></div>
-                <div class="col-md-4"><div class="kpi-card kpi-gris"><h2 id="kpiCitasDuplicadas">0</h2><p>Citas Duplicadas Encontradas</p></div></div>
+                <div class="col-md-4"><div class="kpi-card"><h2 id="kpiTotalCitas">0</h2><p>Total de Registros SIREC</p></div></div>
+                <div class="col-md-4"><div class="kpi-card kpi-gris"><h2 id="kpiCitasDuplicadas">0</h2><p>Duplicados Encontrados</p></div></div>
                 <div class="col-md-4"><div class="kpi-card kpi-claro"><h2 id="kpiTotalUmf">0</h2><p>Total de Unidades (UMF)</p></div></div>
             </div>
 
@@ -261,7 +241,7 @@ def main():
                         <div id="divFig3" style="width: 100%; height: 600px;"></div>
                         <div id="zeroStateFig3" class="zero-state-message d-none">
                             <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i><br>
-                            Excelente: No se encontraron citas duplicadas en el hospital seleccionado.
+                            Excelente: No se encontraron registros duplicados en esta vista.
                         </div>
                     </div>
                 </div>
@@ -277,9 +257,9 @@ def main():
                                 <thead>
                                     <tr>
                                         <th>Unidad (UMF)</th>
-                                        <th>Total Solicitudes Emitidas</th>
-                                        <th>Pacientes c/ Múltiples Citas</th>
-                                        <th>Total Citas Duplicadas</th>
+                                        <th>Total Registros Emitidos</th>
+                                        <th>Pacientes c/ Múltiples Registros</th>
+                                        <th>Total Registros Duplicados</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -293,7 +273,7 @@ def main():
             <div class="row">
                 <div class="col-12">
                     <div class="card p-4">
-                        <h3 class="mb-4 text-center">Detalle de Pacientes con Citas Duplicadas / Triplicadas</h3>
+                        <h3 class="mb-4 text-center">Detalle de Duplicados en SIREC</h3>
                         <div id="zeroStateTable" class="zero-state-message d-none mb-3">
                             No hay datos de duplicados para mostrar en esta tabla.
                         </div>
@@ -301,14 +281,14 @@ def main():
                             <table id="tablaDetallesDuplicados" class="table table-striped table-hover display table-bordered text-center w-100">
                                 <thead>
                                     <tr>
-                                        <th>Hospital</th>
+                                        <th>Reporte</th>
                                         <th>Unidad (UMF)</th>
                                         <th>NSS + AGREGADO</th>
                                         <th>Nombre del Paciente</th>
                                         <th>Especialidad</th>
                                         <th>Fecha Cita</th>
-                                        <th>Hora Cita</th>
-                                        <th>Total de Citas Encontradas</th>
+                                        <th>Consultorio</th>
+                                        <th>Total de Registros Encontrados</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -376,10 +356,10 @@ def main():
             function updateDashboard(hospital) {{
                 const data = DATA_STORE[hospital];
                 
-                // 1. Actualizar KPIs con animación rápida
-                animateValue("kpiTotalCitas", parseInt($('#kpiTotalCitas').text()), data.kpis.total_citas, 200);
-                animateValue("kpiCitasDuplicadas", parseInt($('#kpiCitasDuplicadas').text()), data.kpis.citas_duplicadas, 200);
-                animateValue("kpiTotalUmf", parseInt($('#kpiTotalUmf').text()), data.kpis.total_umf, 200);
+                // 1. Actualizar KPIs sin animación
+                $('#kpiTotalCitas').text(data.kpis.total_citas);
+                $('#kpiCitasDuplicadas').text(data.kpis.citas_duplicadas);
+                $('#kpiTotalUmf').text(data.kpis.total_umf);
 
                 // 2. Gráfica 1: Solicitudes
                 const trace1 = {{
@@ -391,9 +371,9 @@ def main():
                     textposition: 'auto'
                 }};
                 Plotly.react('divFig1', [trace1], {{
-                    title: '1. Solicitudes Totales por Unidad (UMF)',
+                    title: '1. Registros Totales por Unidad (UMF)',
                     xaxis: {{tickangle: -45, title: 'Unidad (UMF)'}},
-                    yaxis: {{title: 'Cantidad de Solicitudes Emitidas'}},
+                    yaxis: {{title: 'Cantidad de Registros'}},
                     margin: {{b: 150}},
                     plot_bgcolor: "white", paper_bgcolor: "white"
                 }});
@@ -411,10 +391,10 @@ def main():
                     }};
                 }});
                 Plotly.react('divFig2', traces2, {{
-                    title: '2. Solicitudes por Especialidad en el Top 20 de Unidades',
+                    title: '2. Registros por Especialidad en el Top 20 de Unidades',
                     barmode: 'stack',
                     xaxis: {{tickangle: -45, title: 'Unidad'}},
-                    yaxis: {{title: 'Número de Solicitudes'}},
+                    yaxis: {{title: 'Número de Registros'}},
                     margin: {{b: 150}},
                     plot_bgcolor: "white", paper_bgcolor: "white"
                 }});
@@ -432,9 +412,9 @@ def main():
                         textposition: 'auto'
                     }};
                     Plotly.react('divFig3', [trace3], {{
-                        title: '3. Cantidad Total de Citas Duplicadas/Triplicadas por Unidad',
+                        title: '3. Cantidad Total de Entradas Duplicadas por Unidad',
                         xaxis: {{tickangle: -45, title: 'Unidad (UMF)'}},
-                        yaxis: {{title: 'Citas Duplicadas'}},
+                        yaxis: {{title: 'Entradas Duplicadas'}},
                         margin: {{b: 150}},
                         plot_bgcolor: "white", paper_bgcolor: "white"
                     }});
@@ -504,10 +484,10 @@ def main():
     """
 
     os.makedirs("docs", exist_ok=True)
-    with open("docs/index.html", "w", encoding="utf-8") as f:
+    with open("docs/sirec.html", "w", encoding="utf-8") as f:
         f.write(html_template)
     
-    print(f"\n¡Éxito! El reporte se ha guardado como 'docs/index.html' con {len(hospitales_unicos)} hospitales procesados.")
+    print(f"\n¡Éxito! El reporte se ha guardado como 'docs/sirec.html' con {len(unidades_unicas)} unidades procesadas.")
 
 if __name__ == "__main__":
     main()
