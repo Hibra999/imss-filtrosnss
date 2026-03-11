@@ -219,11 +219,10 @@ def main():
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-            <div class="container d-flex justify-content-between align-items-center">
+            <div class="container d-flex justify-content-center align-items-center">
                 <a class="navbar-brand fw-bold" style="color: #2c3e50; font-size: 1.5rem;" href="#">Análisis Estratégico de Citas por Unidad (UMF)</a>
-                <div>
-                    <a href="index.html" class="btn btn-success" style="background-color:#134e39; border-color:#134e39;">Citas Comprometidas</a>
-                    <a href="sirec.html" class="btn btn-outline-success me-2" style="border-color:#134e39; color:#134e39;">Análisis SIREC</a>
+                <div class="ms-4">
+                    <a href="index.html" class="btn btn-outline-secondary btn-sm"><i class="bi bi-house-door me-1"></i>Inicio</a>
                 </div>
             </div>
         </nav>
@@ -504,10 +503,10 @@ def main():
     """
 
     os.makedirs("docs", exist_ok=True)
-    with open("docs/index.html", "w", encoding="utf-8") as f:
+    with open("docs/DF72F2A6.html", "w", encoding="utf-8") as f:
         f.write(html_template)
     
-    print(f"\n¡Éxito! El reporte se ha guardado como 'docs/index.html' con {len(hospitales_unicos)} hospitales procesados.")
+    print(f"\n¡Éxito! El reporte se ha guardado como 'docs/DF72F2A6.html' con {len(hospitales_unicos)} hospitales procesados.")
 
 if __name__ == "__main__":
     main()
